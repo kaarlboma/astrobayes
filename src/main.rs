@@ -3,6 +3,9 @@ mod fileio;
 use blr::blr::BayesianLinearRegressor;
 mod blr;
 
+#[cfg(test)]
+mod tests;
+
 fn main() {
     // Read features and targets from the CSV file
     let (features, targets) = read_csv("data/cleaned_exoplanet_data.csv").unwrap(); // Use `?` to propagate errors

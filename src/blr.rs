@@ -26,25 +26,25 @@ pub mod blr {
      */
     pub struct BayesianLinearRegressor {
         // Model Data
-        x: Array2<f64>,
-        y: Array1<f64>, 
+        pub x: Array2<f64>,
+        pub y: Array1<f64>, 
 
         // Model Parameters
-        beta: Array1<f64>,
-        variance: f64,
+        pub beta: Array1<f64>,
+        pub variance: f64,
 
         // Priors and Hyperparamters
-        beta_prior_mean: Array1<f64>,
-        beta_prior_cov: Array2<f64>,
-        a: f64,
-        b: f64,
+        pub beta_prior_mean: Array1<f64>,
+        pub beta_prior_cov: Array2<f64>,
+        pub a: f64,
+        pub b: f64,
 
         // MCMC Settings
         pub beta_samples: Vec<Array1<f64>>,
         pub variance_samples: Vec<f64>,
-        num_samples: usize,
-        burn_in: usize,
-        thin: usize,
+        pub num_samples: usize,
+        pub burn_in: usize,
+        pub thin: usize,
     }
 
     impl BayesianLinearRegressor {
@@ -492,3 +492,4 @@ pub mod blr {
         }
     }
 }
+
