@@ -17,6 +17,9 @@ fn main() {
     
     // Run MCMC to sample the posterior
     model.run_mcmc();
+
+    // Export the beta values as csv
+    model.export_beta_samples_to_csv("beta_samples.csv");
     
     // Predicting with just one observation (first row of the data)
     // Printing 95% credible interval too
