@@ -1,24 +1,30 @@
 pub mod fileio {
-    use std::collections::HashMap;
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
-
-    pub fn load_index(path: &str) -> HashMap<u32, String> {
-        let file = File::open(path).expect("Could not open PLD index file");
-        let reader = BufReader::new(file);
-        let mut map = HashMap::new();
-
-        for line in reader.lines() {
-            if let Ok(entry) = line {
-                let parts: Vec<&str> = entry.trim().split('\t').collect();
-                if parts.len() == 2 {
-                    if let Ok(id) = parts[1].parse::<u32>() {
-                        map.insert(id, parts[0].to_string());
-                    }
-                }
-            }
+    use csv::ReaderBuilder;
+    use ndarray::{Array2, Array1};
+    use std::error::Error;
+    
+    pub fn read_csv(filename: &str) -> Result<(Array2<f64>, Array1<f64>), Box<dyn Error>> {
+        let mut rdr = ReaderBuilder::new().has_headers(true).from_path(filename)?;
+    
+        let mut features: Vec<Vec<f64>> = Vec::new();
+        let mut targets: Vec<f64> = Vec::new();
+    
+        for result in rdr.records() {
+            let record = result?;
+            
+            let target: f64 = record.get(0).unwrap().parse()?;  // `pl_rade` is the first column
+            let feature: Vec<f64> = record.iter().skip(1) // Skipping `pl_rade` column
+                                          .map(|s| s.parse().unwrap())
+                                          .collect();
+            
+            features.push(feature);
+            targets.push(target);
         }
-
-        map
+    
+        // Convert to ndarray types
+        let features_array = Array2::from_shape_vec((features.len(), features[0].len()), features.concat())?;
+        let targets_array = Array1::from_vec(targets);
+    
+        Ok((features_array, targets_array))
     }
 }
