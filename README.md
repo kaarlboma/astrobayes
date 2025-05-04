@@ -37,7 +37,7 @@ Data is sourced from the [NASA Exoplanet Archive](https://exoplanetarchive.ipac.
 
 ## Usage
 
-1. Clone the repo and build the Rust sampler:
+1. Clone the repo and build the Rust project:
    ```bash
    cargo build --release
    cargo run --release
