@@ -1,6 +1,6 @@
 # Exoplanet Radius Regression with Gibbs Sampling
 
-This project applies Bayesian Linear Regression to predict exoplanet radii from host star properties using Gibbs Sampler with conjugate priors. The model is implemented from scratch in Rust, and all computations are performed without high-level machine learning libraries.
+This project applies Bayesian Linear Regression to predict exoplanet radii from host star properties using Gibbs Sampler with conjugate priors. The model is implemented from scratch in Rust, and all computations are performed without using external libraries apart from linear algebra and arrays.
 
 ## Features
 
