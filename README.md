@@ -27,6 +27,14 @@ Data is sourced from the [NASA Exoplanet Archive](https://exoplanetarchive.ipac.
 - 10,000 samples generated from Gibbs Sampling
 - Quantified uncertainty through credible intervals
 
+## Output
+
+- Features array and target array
+- Prediction for the first row of the data + 95% Credible Interval
+- Prediction array for all the rows of the data
+- MMSE Estimates of Beta after Gibbs Sampling
+- 95% Credible Interval for the predictors
+
 ## Usage
 
 1. Clone the repo and build the Rust sampler:
