@@ -16,10 +16,10 @@ fn main() {
     println!("------------------------------------------------");
 
     // Initialize the Bayesian Linear Regressor with the data
-    let mut model = BayesianLinearRegressor::new(features.clone(), targets.clone(), None, None, None, None, None, None, None);
+    let mut model = BayesianLinearRegressor::new(features.clone(), targets.clone(), None, None, None, None, None);
     
     // Run MCMC to sample the posterior
-    model.run_mcmc();
+    model.run_gibbs_sampling();
 
     // Export the beta values as csv
     model.export_beta_samples_to_csv("beta_samples.csv");
@@ -32,8 +32,12 @@ fn main() {
     println!("");
 
     // Predicting with several data points (the full data)
-    let predictions = model.predict_multiple_with_mean_beta(features.clone());
+    let predictions = model.predict_multiple(features.clone());
     println!("Predictions for multiple data points:\n{}", predictions);
+    println!("");
+
+    // Get the MMSE estimates for beta
+    println!("MMSE Estimates for Beta: {:?}", model.beta.clone().into_raw_vec());
     println!("");
 
     // Get the 95% credible intervals for each predictor

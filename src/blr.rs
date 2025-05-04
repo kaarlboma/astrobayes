@@ -21,8 +21,6 @@ pub mod blr {
     - beta_samples: vector of arrays containing the samples from Gibbs sampling
     - variance_samples: vector of floats containing variance samples from Gibbs sampling
     - num_samples: total number of samples the model should generate
-    - burn_in: MCMC burn in period before sampling from posterior (CHANGED TO GIBBS)
-    - thin: value that ensures that the previous value from MCMC is not too dependent (CHANGED TO GIBBS)
      */
     pub struct BayesianLinearRegressor {
         // Model Data
@@ -39,12 +37,10 @@ pub mod blr {
         pub a: f64,
         pub b: f64,
 
-        // MCMC Settings
+        // Gibbs Sample Settings
         pub beta_samples: Vec<Array1<f64>>,
         pub variance_samples: Vec<f64>,
         pub num_samples: usize,
-        pub burn_in: usize,
-        pub thin: usize,
     }
 
     impl BayesianLinearRegressor {
@@ -52,7 +48,7 @@ pub mod blr {
         What it does: Initializes a new instance of the model with required parameters 
         and optional parameters for users to input with defaults if not inputted of the data
 
-        Inputs: Data and optionally, parameters for prior, likelihood, and MCMC settings
+        Inputs: Data and optionally, parameters for prior, likelihood, and Gibbs settings
         Outputs: Returns an instance of the model
 
         High-level logic: Unwrapping with defaults and adding intercept term
@@ -66,8 +62,6 @@ pub mod blr {
             a: Option<f64>,
             b: Option<f64>,
             num_samples: Option<usize>,
-            burn_in: Option<usize>,
-            thin: Option<usize>,
         ) -> Self {
             assert_eq!(x.nrows(), y.len(), "Number of data points need to be the same");
 
@@ -89,18 +83,16 @@ pub mod blr {
             let a = a.unwrap_or(1.0);
             let b = b.unwrap_or(1.0);
         
-            // Set default values for MCMC settings if None
+            // Set default values for Gibbs Sampling settings if None
             let beta_samples: Vec<Array1<f64>> = Vec::new();
             let variance_samples: Vec<f64> = Vec::new();
             let num_samples = num_samples.unwrap_or(10000);
-            let burn_in = burn_in.unwrap_or(200);
-            let thin = thin.unwrap_or(10);
         
             // Initialize model parameters
             let beta = Array1::zeros(n_features);
             let variance = 1.0;
 
-            BayesianLinearRegressor { x: intercept_x, y: y, beta: beta, variance: variance, beta_prior_mean: beta_prior_mean, beta_prior_cov: beta_prior_cov, a: a, b: b, beta_samples, variance_samples, num_samples: num_samples, burn_in: burn_in, thin: thin }
+            BayesianLinearRegressor { x: intercept_x, y: y, beta: beta, variance: variance, beta_prior_mean: beta_prior_mean, beta_prior_cov: beta_prior_cov, a: a, b: b, beta_samples, variance_samples, num_samples: num_samples}
         }
 
         /*
@@ -123,12 +115,12 @@ pub mod blr {
 
         // Sample the beta values from a N(0, 1)
         /*
-        What it does: Generates samples of beta and variance to initialize the MCMC step
+        What it does: Generates samples of beta and variance to initialize the Gibbs Sampling
 
         Inputs: Reference to self
         Outputs: None as it just updates the model attributes
 
-        High-level logic:
+        High-level logic
         - Sample_beta function:
             - Takes in number of features, a sampled variance, prior for the beta
               means and covariance. 
@@ -239,7 +231,7 @@ pub mod blr {
         }
 
         /*
-        What it does: Updates the values of beta and variance for each step in MCMC
+        What it does: Updates the values of beta and variance for each step in Gibbs Sample
 
         Inputs: Reference to self
         Outputs: None as we just update the model attributes
@@ -248,21 +240,20 @@ pub mod blr {
         - Updates beta and variance by calling the respective methods of sampling
           from the posterior distribution
          */
-        pub fn mcmc_step(&mut self) {
+        pub fn gibbs_sample(&mut self) {
             self.beta = self.sample_beta_posterior();
             self.variance = self.sample_variance_posterior();
         }
 
         /*
-        What it does: Uses Gibbs Sampling + MCMC aspects to populate the beta and 
+        What it does: Uses Gibbs Sampling to populate the beta and 
         variance sample vectors
 
         Inputs: Reference to self
         Outputs: None as it just updates the model attributes
 
         High-level logic:
-        - Calculates iterations by doing num_samples * thin and then + the burn_in period
-        - For loop to iterate through the number of iterations and calls the mcmc_step method
+        - For loop to iterate through the number of samples and calls the gibbs_sample method
           to generate the samples. If the iteration is past the burn in and is factor of
           the thin then populate the sample
         - Update the current beta and variance at the end of the iterations to be the 
@@ -274,23 +265,16 @@ pub mod blr {
             - Iterates through the variance samples, gets the sum, and divides by the
               number of samples to get the mean
          */
-        pub fn run_mcmc(&mut self) {
+        pub fn run_gibbs_sampling(&mut self) {
             self.sample_prior();
 
             let mut beta_samples: Vec<Array1<f64>> = Vec::new();
             let mut variance_samples: Vec<f64> = Vec::new();
 
-            let iterations = self.num_samples * self.thin + self.burn_in;
-
-            for i in 0..iterations {
-                self.mcmc_step();
-
-                if i >= self.burn_in {
-                    if i % self.thin == 0 {
-                        beta_samples.push(self.beta.clone());
-                        variance_samples.push(self.variance.clone());
-                    }
-                }
+            for _ in 0..self.num_samples {
+                self.gibbs_sample();
+                beta_samples.push(self.beta.clone());
+                variance_samples.push(self.variance.clone());
             }
             self.beta_samples = beta_samples;
             self.variance_samples = variance_samples;
@@ -315,7 +299,7 @@ pub mod blr {
         }
 
         /*
-        -- Asked ChatGPT how to get the covariance matrix from the sampled beta from my MCMC sample --
+        -- Asked ChatGPT how to get the covariance matrix from the sampled beta from my Gibbs sample --
 
         What it does: Calculates the covariance matrix from the beta samples
 
@@ -370,9 +354,8 @@ pub mod blr {
             let mean_prediction = x_test_intercept.dot(&self.beta);
     
             // Compute the variance for the prediction: sigma^2 + x_test * Sigma_beta * x_test
-            let sigma_squared = self.variance;
             let sigma_beta = self.empirical_beta_covariance();
-            let prediction_variance = sigma_squared + x_test_intercept.dot(&(sigma_beta.dot(&x_test_intercept)));
+            let prediction_variance = self.variance + x_test_intercept.dot(&(sigma_beta.dot(&x_test_intercept)));
     
             // Calculate the 95% credible interval: mean ± 1.96 * sqrt(variance)
             let lower_bound = mean_prediction - 1.96 * prediction_variance.sqrt();
@@ -391,7 +374,7 @@ pub mod blr {
         - Adds an column of 1s for the intercept term with concatenate
         - Computes the prediction by doing the dot product of the Beta coefficients and the test data
          */
-        pub fn predict_multiple_with_mean_beta(&self, x_test: Array2<f64>) -> Array1<f64> {
+        pub fn predict_multiple(&self, x_test: Array2<f64>) -> Array1<f64> {
             // Predict using the mean of the beta estimates (mean of posterior)
             let intercept = Array::ones((x_test.nrows(), 1));
             let x_test_intercept = concatenate![Axis(1), intercept, x_test];
@@ -412,7 +395,7 @@ pub mod blr {
               of the ith column and then collects it into vector
             - Uses sort_by since f64 does not support normal comparison
             - Gets the lower_index and upper index by getting the 2.5 and 97.5 percentiles of the data
-              and then rounds them to nearest 3 decimal poitns and pushes them to the tuple and to the vector
+              and then rounds them to nearest 3 decimal points and pushes them to the tuple and to the vector
          */
         pub fn get_beta_credible_interval(&self) -> Vec<(f64, f64)> {
             let mut credible_intervals: Vec<(f64, f64)> = Vec::new();

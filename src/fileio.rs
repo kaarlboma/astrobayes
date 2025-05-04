@@ -13,7 +13,7 @@ pub mod fileio {
             let record = result?;
             
             let target: f64 = record.get(0).unwrap().parse()?;  // `pl_rade` is the first column
-            let feature: Vec<f64> = record.iter().skip(1) // Skipping `pl_rade` column
+            let feature: Vec<f64> = record.iter().skip(1) // After the first column
                                           .map(|s| s.parse().unwrap())
                                           .collect();
             

@@ -9,9 +9,3 @@ ndarray-linalg = { version = "0.16", features = ["openblas-system"] }
 csv = "1.1"
 rand = "0.8"
 rand_distr = "0.4"
-
-[build]
-rustflags = ["-L", "/opt/homebrew/opt/openblas/lib"]
-
-[env]
-RUSTFLAGS = "-L /opt/homebrew/opt/openblas/lib"

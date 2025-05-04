@@ -14,7 +14,7 @@ fn test_new_with_defaults() {
     let model = BayesianLinearRegressor::new(
         x.clone(),
         y.clone(),
-        None, None, None, None, None, None, None
+        None, None, None, None, None
     );
 
     assert_eq!(model.x.nrows(), 2);
@@ -32,7 +32,7 @@ Testing if the sample variances are positive for every sample
 fn test_sample_variance_positive() {
     let x = array![[1.0], [2.0]];
     let y = array![1.0, 2.0];
-    let mut model = BayesianLinearRegressor::new(x, y, None, None, None, None, None, None, None);
+    let mut model = BayesianLinearRegressor::new(x, y, None, None, None, None, None);
 
     let sample = model.sample_variance(2.0, 2.0);
     assert!(sample > 0.0);
@@ -46,7 +46,7 @@ of beta is correct
 fn test_sample_prior_updates_model() {
     let x = array![[1.0], [2.0]];
     let y = array![1.0, 2.0];
-    let mut model = BayesianLinearRegressor::new(x, y, None, None, None, None, None, None, None);
+    let mut model = BayesianLinearRegressor::new(x, y, None, None, None, None, None);
     model.sample_prior();
 
     assert_eq!(model.beta.len(), 2); // intercept + 1 feature
@@ -54,21 +54,21 @@ fn test_sample_prior_updates_model() {
 }
 
 /*
-Test if the MCMC is working
+Test if the Gibbs sampling is working
     - Beta samples are being populated
     - Variance samples are being populated
     - Correct number of samples for both
  */
 #[test]
-fn test_run_mcmc_produces_samples() {
+fn test_run_gibbs_sampling_produces_samples() {
     let x = array![[1.0], [2.0], [3.0], [4.0]];
     let y = array![2.0, 3.9, 6.1, 7.8];
     let mut model = BayesianLinearRegressor::new(
         x, y,
         None, None, None, None,
-        Some(100), Some(10), Some(5)
+        Some(100)
     );
-    model.run_mcmc();
+    model.run_gibbs_sampling();
 
     assert!(!model.beta_samples.is_empty());
     assert!(!model.variance_samples.is_empty());
